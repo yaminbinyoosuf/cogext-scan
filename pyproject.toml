@@ -15,7 +15,7 @@ authors = [
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
-    "Topic :: Software Development :: Security",
+    "Topic :: Security",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
@@ -32,3 +32,6 @@ cogext-scan = "cogext_scan:main"
 Homepage = "https://cogextai.com"
 Documentation = "https://cogextai.com/standard"
 Repository = "https://github.com/yaminbinyoosuf/cogext-scan"
+
+[tool.setuptools]
+py-modules = ["cogext_scan"]
