@@ -78,12 +78,14 @@ _SK = "s" + "k" + "-"
 _GHP = "g" + "h" + "p" + "_"
 _XOX = "x" + "o" + "x"
 _KEY = "k" + "e" + "y" + "-"
+_LIVE = "l" + "i" + "v" + "e" + "_"
 
 CREDENTIAL_PATTERNS = [
     (re.compile(_SK + r"[a-zA-Z0-9_\-]{16,}"), "the OpenAI secret key shape"),
     (re.compile(_GHP + r"[a-zA-Z0-9]{20,}"), "the GitHub personal access token shape"),
     (re.compile(_XOX + r"[baprs]-[a-zA-Z0-9-]{10,48}"), "the Slack token shape"),
     (re.compile(_KEY + r"[a-zA-Z0-9]{20,}"), "the generic provider API key shape"),
+    (re.compile(r"[a-z]{2}_" + _LIVE + r"(?=[a-zA-Z0-9]*[0-9])[a-zA-Z0-9]{16,}"), "the live API key shape"),
 ]
 
 # Strings that look like keys but are obviously documentation placeholders.
@@ -482,16 +484,20 @@ def summarize(findings):
     return crit_count, high_count, med_count, score
 
 
-def score_status(score):
-    if score >= 80:
-        return "SAFE FOR PRODUCTION"
-    if score >= 50:
-        return "NEEDS REVIEW"
-    return "UNSAFE FOR PRODUCTION"
+def status_label(findings):
+    if not findings:
+        return "0 issues found by 4 checks — not a safety guarantee"
+    if any(f.severity in ("CRITICAL", "HIGH") for f in findings):
+        return "UNSAFE FOR PRODUCTION"
+    return "NEEDS REVIEW"
 
 
-def score_color(score):
-    return "green" if score >= 80 else "yellow" if score >= 50 else "red"
+def status_color(findings):
+    if not findings:
+        return "green"
+    if any(f.severity in ("CRITICAL", "HIGH") for f in findings):
+        return "red"
+    return "yellow"
 
 
 def severity_color(severity):
@@ -538,9 +544,9 @@ def render_text(target, findings, depth):
             total, crit_count, high_count, med_count
         )
     )
-    status = score_status(score)
+    status = status_label(findings)
     score_line = "Agent Safety Index: {0}/100 [{1}]".format(score, status)
-    lines.append(paint(score_line, score_color(score)))
+    lines.append(paint(score_line, status_color(findings)))
     lines.append("")
     lines.append(
         paint(
@@ -566,7 +572,7 @@ def render_json(target, findings, depth):
             "high": high_count,
             "medium": med_count,
             "agent_safety_index": score,
-            "status": score_status(score),
+            "status": status_label(findings),
         },
         "findings": [f.as_dict() for f in findings],
     }
